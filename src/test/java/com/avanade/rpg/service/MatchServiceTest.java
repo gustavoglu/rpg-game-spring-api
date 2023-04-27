@@ -2,6 +2,8 @@ package com.avanade.rpg.service;
 
 import com.avanade.rpg.enums.CharacterType;
 import com.avanade.rpg.enums.TurnType;
+import com.avanade.rpg.exception.InvalidTurnActionException;
+import com.avanade.rpg.exception.ResourceNotFoundException;
 import com.avanade.rpg.model.Character;
 import com.avanade.rpg.model.Match;
 import com.avanade.rpg.model.TurnLog;
@@ -60,6 +62,189 @@ public class MatchServiceTest {
 
     }
 
+
+    @Test
+    void defenseTurn_ThrowInvalidTurnAction_TurnAttack(){
+        Character character1 =new Character(CharacterType.Hero,"Character 1",10,20,9,8,1,12);
+        Character character2 =new Character(CharacterType.Monster,"Character 2",10,20,9,8,1,12);
+        character1.setId(1L);
+        character2.setId(2L);
+
+        Match match1 = new Match(null,character1,character2,40,20,character1, TurnType.Attack,LocalDateTime.now(),false,"Player 1","Player 2",10,8,"Player 1",character1);
+        match1.setId(1L);
+        Match expected = new Match(null,character1,character2,40,20,character1, TurnType.Attack,LocalDateTime.now(),false,"Player 1","Player 2",10,8,"Player 1",character1);
+        expected.setId(1L);
+
+        when( repository.findById( any( ) ) ).thenReturn(Optional.ofNullable( match1 ) );
+
+
+        var exception = Assertions.assertThrows(InvalidTurnActionException.class, () -> service.defenseTurn(match1.getId()));
+        Assertions.assertTrue(exception.getMessage().contains("It's not the defense turn"));
+    }
+
+    @Test
+    void defenseTurn_ThrowInvalidTurnAction_MatchIsComplete(){
+        Character character1 =new Character(CharacterType.Hero,"Character 1",10,20,9,8,1,12);
+        Character character2 =new Character(CharacterType.Monster,"Character 2",10,20,9,8,1,12);
+        character1.setId(1L);
+        character2.setId(2L);
+
+        Match match1 = new Match(null,character1,character2,40,20,character1, TurnType.Defense,LocalDateTime.now(),true,"Player 1","Player 2",10,8,"Player 1",character1);
+        match1.setId(1L);
+        Match expected = new Match(null,character1,character2,40,20,character1, TurnType.Defense,LocalDateTime.now(),true,"Player 1","Player 2",10,8,"Player 1",character1);
+        expected.setId(1L);
+
+        MatchTurnResponse expectedResponse = new MatchTurnResponse();
+        expectedResponse.setMatch(match1);
+        expectedResponse.setTurnLogs(new ArrayList<>());
+
+        when( repository.findById( any( ) ) ).thenReturn(Optional.ofNullable( match1 ) );
+
+        var exception = Assertions.assertThrows(InvalidTurnActionException.class, () -> service.defenseTurn(match1.getId()));
+        Assertions.assertTrue(exception.getMessage().contains("Match is complete"));
+    }
+
+    @Test
+    void attackTurn_ThrowInvalidTurnAction_DamageNotCalculated(){
+        Character character1 =new Character(CharacterType.Hero,"Character 1",10,20,9,8,1,12);
+        Character character2 =new Character(CharacterType.Monster,"Character 2",10,20,9,8,1,12);
+        character1.setId(1L);
+        character2.setId(2L);
+
+        Match match1 = new Match(null,character1,character2,40,20,character1, TurnType.Attack,LocalDateTime.now(),false,"Player 1","Player 2",10,8,"Player 1",character1);
+        match1.setId(1L);
+        Match expected = new Match(null,character1,character2,40,20,character1, TurnType.Attack,LocalDateTime.now(),false,"Player 1","Player 2",10,8,"Player 1",character1);
+        expected.setId(1L);
+
+        MatchTurnResponse expectedResponse = new MatchTurnResponse();
+        expectedResponse.setMatch(match1);
+        expectedResponse.setTurnLogs(new ArrayList<>());
+
+        when( repository.findById( any( ) ) ).thenReturn(Optional.ofNullable( match1 ) );
+
+        var turnLogDefense = new TurnLog(match1,TurnType.Attack,character1,10,18,null,null,7,10,null,null,false);
+
+        when(turnLogRepository.getLastLogByMatchId(any())).thenReturn(turnLogDefense);
+
+        var exception = Assertions.assertThrows(InvalidTurnActionException.class, () -> service.attackTurn(match1.getId()));
+        Assertions.assertTrue(exception.getMessage().contains("It is not possible to attack"));
+    }
+
+    @Test
+    void attackTurn_ThrowInvalidTurnAction_MatchIsComplete(){
+        Character character1 =new Character(CharacterType.Hero,"Character 1",10,20,9,8,1,12);
+        Character character2 =new Character(CharacterType.Monster,"Character 2",10,20,9,8,1,12);
+        character1.setId(1L);
+        character2.setId(2L);
+
+        Match match1 = new Match(null,character1,character2,40,20,character1, TurnType.Defense,LocalDateTime.now(),true,"Player 1","Player 2",10,8,"Player 1",character1);
+        match1.setId(1L);
+        Match expected = new Match(null,character1,character2,40,20,character1, TurnType.Defense,LocalDateTime.now(),true,"Player 1","Player 2",10,8,"Player 1",character1);
+        expected.setId(1L);
+
+        when( repository.findById( any( ) ) ).thenReturn(Optional.ofNullable( match1 ) );
+
+        var exception = Assertions.assertThrows(InvalidTurnActionException.class, () -> service.attackTurn(match1.getId()));
+        Assertions.assertTrue(exception.getMessage().contains("Match is complete"));
+    }
+
+    @Test
+    void attackTurn_ThrowInvalidTurnAction_TurnDefense(){
+        Character character1 =new Character(CharacterType.Hero,"Character 1",10,20,9,8,1,12);
+        Character character2 =new Character(CharacterType.Monster,"Character 2",10,20,9,8,1,12);
+        character1.setId(1L);
+        character2.setId(2L);
+
+        Match match1 = new Match(null,character1,character2,40,20,character1, TurnType.Defense,LocalDateTime.now(),false,"Player 1","Player 2",10,8,"Player 1",character1);
+        match1.setId(1L);
+        Match expected = new Match(null,character1,character2,40,20,character1, TurnType.Defense,LocalDateTime.now(),false,"Player 1","Player 2",10,8,"Player 1",character1);
+        expected.setId(1L);
+
+        when( repository.findById( any( ) ) ).thenReturn(Optional.ofNullable( match1 ) );
+
+
+        var exception = Assertions.assertThrows(InvalidTurnActionException.class, () -> service.attackTurn(match1.getId()));
+        Assertions.assertTrue(exception.getMessage().contains("It's not the attack turn"));
+    }
+
+    @Test
+    void damageCalculate_ThrowInvalidTurnAction_LastTurnLogAttack(){
+        Character character1 =new Character(CharacterType.Hero,"Character 1",10,20,9,8,1,12);
+        Character character2 =new Character(CharacterType.Monster,"Character 2",10,20,9,8,1,12);
+        character1.setId(1L);
+        character2.setId(2L);
+
+        Match match1 = new Match(null,character1,character2,40,20,character1, TurnType.Defense,LocalDateTime.now(),false,"Player 1","Player 2",10,8,"Player 1",character1);
+        match1.setId(1L);
+        Match expected = new Match(null,character1,character2,40,20,character1, TurnType.Defense,LocalDateTime.now(),false,"Player 1","Player 2",10,8,"Player 1",character1);
+        expected.setId(1L);
+
+        MatchTurnResponse expectedResponse = new MatchTurnResponse();
+        expectedResponse.setMatch(match1);
+        expectedResponse.setTurnLogs(new ArrayList<>());
+
+        when( repository.findById( any( ) ) ).thenReturn(Optional.ofNullable( match1 ) );
+
+        var turnLogDefense = new TurnLog(match1,TurnType.Attack,character1,10,18,null,null,7,10,null,null,false);
+
+        when(turnLogRepository.getLastLogByMatchId(any())).thenReturn(turnLogDefense);
+
+        var exception = Assertions.assertThrows(InvalidTurnActionException.class, () -> service.damageCalculate(match1.getId()));
+        Assertions.assertTrue(exception.getMessage().contains("It is necessary to defend"));
+    }
+
+    @Test
+    void damageCalculate_ThrowInvalidTurnAction_TurnLogDagameCalculated(){
+        Character character1 =new Character(CharacterType.Hero,"Character 1",10,20,9,8,1,12);
+        Character character2 =new Character(CharacterType.Monster,"Character 2",10,20,9,8,1,12);
+        character1.setId(1L);
+        character2.setId(2L);
+
+        Match match1 = new Match(null,character1,character2,40,20,character1, TurnType.Defense,LocalDateTime.now(),false,"Player 1","Player 2",10,8,"Player 1",character1);
+        match1.setId(1L);
+        Match expected = new Match(null,character1,character2,40,20,character1, TurnType.Defense,LocalDateTime.now(),false,"Player 1","Player 2",10,8,"Player 1",character1);
+        expected.setId(1L);
+
+        MatchTurnResponse expectedResponse = new MatchTurnResponse();
+        expectedResponse.setMatch(match1);
+        expectedResponse.setTurnLogs(new ArrayList<>());
+
+        when( repository.findById( any( ) ) ).thenReturn(Optional.ofNullable( match1 ) );
+
+        var turnLogDefense = new TurnLog(match1,TurnType.Defense,character1,10,18,null,null,7,10,null,null,true);
+
+        when(turnLogRepository.getLastLogByMatchId(any())).thenReturn(turnLogDefense);
+
+        var exception = Assertions.assertThrows(InvalidTurnActionException.class, () -> service.damageCalculate(match1.getId()));
+        Assertions.assertTrue(exception.getMessage().contains("The damage has already been calculated"));
+    }
+
+    @Test
+    void damageCalculate_ThrowResourceNotFound_TurnLogAttack(){
+        Character character1 =new Character(CharacterType.Hero,"Character 1",10,20,9,8,1,12);
+        Character character2 =new Character(CharacterType.Monster,"Character 2",10,20,9,8,1,12);
+        character1.setId(1L);
+        character2.setId(2L);
+
+        Match match1 = new Match(null,character1,character2,40,20,character1, TurnType.Defense,LocalDateTime.now(),false,"Player 1","Player 2",10,8,"Player 1",character1);
+        match1.setId(1L);
+        Match expected = new Match(null,character1,character2,40,20,character1, TurnType.Defense,LocalDateTime.now(),false,"Player 1","Player 2",10,8,"Player 1",character1);
+        expected.setId(1L);
+
+        MatchTurnResponse expectedResponse = new MatchTurnResponse();
+        expectedResponse.setMatch(match1);
+        expectedResponse.setTurnLogs(new ArrayList<>());
+
+        when( repository.findById( any( ) ) ).thenReturn(Optional.ofNullable( match1 ) );
+
+        var turnLogDefense = new TurnLog(match1,TurnType.Defense,character1,10,18,null,null,7,10,null,null,false);
+        when(turnLogRepository.getLastAttackLogByMatchId(any())).thenReturn(null);
+        when(turnLogRepository.getLastLogByMatchId(any())).thenReturn(turnLogDefense);
+
+        var exception = Assertions.assertThrows(ResourceNotFoundException.class, () -> service.damageCalculate(match1.getId()));
+        Assertions.assertTrue(exception.getMessage().contains("Turn Attack not found"));
+    }
+
     @Test
     void damageCalculate(){
         Character character1 =new Character(CharacterType.Hero,"Character 1",10,20,9,8,1,12);
@@ -97,6 +282,7 @@ public class MatchServiceTest {
         verify( repository, times( 2 ) ).findById( any( ) );
         verify( turnLogRepository, times( 1 ) ).getLastAttackLogByMatchId( any( ) );
         verify( turnLogRepository, times( 1 ) ).getLastDefenseLogByMatchIdAndCharacterId( any( ),any() );
+
     }
 
 

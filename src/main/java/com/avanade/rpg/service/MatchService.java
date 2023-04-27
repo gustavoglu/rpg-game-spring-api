@@ -140,12 +140,12 @@ public class MatchService extends ServiceBase<Match,MatchRepository> {
 
         var defenseTurnLog = turnLogRepository.getLastLogByMatchId(matchId);
 
-       if(defenseTurnLog.getType() != TurnType.Defense || defenseTurnLog.getDamage() != null){
-           throw new ResourceNotFoundException("It is necessary to defend on the turn before calculating the damage");
+       if(defenseTurnLog.getType() != TurnType.Defense  || defenseTurnLog.getDamage() != null){
+           throw new InvalidTurnActionException("It is necessary to defend on the turn before calculating the damage");
        }
 
         if(defenseTurnLog.isDamageCalculated()){
-            throw new ResourceNotFoundException("The damage has already been calculated");
+            throw new InvalidTurnActionException("The damage has already been calculated");
         }
 
        var attackTurnLog =  turnLogRepository.getLastAttackLogByMatchId(matchId);
